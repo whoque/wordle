@@ -1,0 +1,44 @@
+*, html {
+    margin: 0;
+}
+.wrapper {
+    display: flex;
+    justify-content: center;
+    background-color: #121213;
+}
+.App {
+    height: 100vh;
+    min-width: 350px;
+    max-width: 650px;
+    width: 100%;
+}
+.blurApp {
+    filter: blur(4px);
+}
+.simple-keyboard {
+    padding: 10px !important;
+    background-color: #121213 !important;
+    margin-top: 5px;
+    .hg-button {
+        background-color: #808384 !important;
+        color: white !important;
+        height: 60px !important;
+        border-bottom: unset !important;
+        font-size: 12px;
+        font-weight: bold !important;
+    }
+    .hg-button-enter {
+        // font-size: 14px !important;
+    }
+    .hg-button-bksp {
+        // font-size: 30px !important;
+    }
+    .hg-button-enter, .hg-button-bksp {
+        border: 1px solid #c1c1c1 !important;
+        padding: unset !important;
+    }
+}
+
+.hg-theme-default .hg-row .hg-button:not(:last-child) {
+    margin-right: 6px !important;
+}

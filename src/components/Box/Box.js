@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { LETTER_COUNT, WORD_COUNT } from "../../constants";
 import "./Box.scss";
 import cloneDeep from "lodash/cloneDeep";
+import { KEYS } from "../../App";
+import { TEMPLATE } from "../Popup/Popup";
+
+const ShakeClass = "shake";
+const GlowClass = "glow";
 
 const COLOR = {
-  NOT_FOUND: "grey",
-  FOUND_WRONG_SPOT: "yellow",
-  FOUND_CORRECT_SPOT: "green",
+  NOT_FOUND: "#3a3a3c",
+  FOUND_WRONG_SPOT: "#b49f3a",
+  FOUND_CORRECT_SPOT: "#538d4e",
 };
 
 const WordState = {
@@ -47,11 +52,13 @@ const getInitialWordsObj = () => {
   return result;
 };
 
-function Box({ letterPressed, actualWord, savedState }) {
+function Box({ letterPressed, actualWord, savedState, showPopupHandler }) {
   const initialState = savedState ? savedState : getInitialWordsObj();
 
   const [state, setState] = useState(initialState);
   const [activeWord, setActiveWord] = useState();
+  const [shakeClass, setShakeClass] = useState("");
+  const [glowClass, setGlowClass] = useState("");
   const [actualWordLetterMap, setActualWordLetterMap] = useState({});
 
   useEffect(() => {
@@ -94,21 +101,27 @@ function Box({ letterPressed, actualWord, savedState }) {
           }
         });
         if (word.length === LETTER_COUNT) {
-          // const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`;
-          // fetch(url)
-          //   .then((response) => {
-          //     if (response.ok) {
-          //       return response.json();
-          //     }
-          //     throw new Error("Something went wrong");
-          //   })
-          //   .then((data) => {
-          //     checkWord(word);
-          //   })
-          //   .catch((error) => {
-          //     console.log("Show No word pop up !");
-          //   });
-          checkWord(word);
+          setGlowClass(GlowClass);
+          const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`;
+          fetch(url)
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              }
+              throw new Error("Something went wrong");
+            })
+            .then((data) => {
+              setTimeout(() => {
+                checkWord(word);
+                setGlowClass("");
+              }, 700);
+            })
+            .catch((error) => {
+              setTimeout(() => {
+                invalidAnimation();
+                setGlowClass("");
+              }, 700);
+            });
         }
       } else {
         const targetLetter = cloneActiveWord.word.find(
@@ -122,34 +135,63 @@ function Box({ letterPressed, actualWord, savedState }) {
     }
   }, [letterPressed]);
 
+  const invalidAnimation = () => {
+    setShakeClass(ShakeClass);
+    setTimeout(() => {
+      setShakeClass("");
+    }, 1500);
+  };
+
   const getLetterMatchColor = (typedWord) => {
+    const actualWordMapClone = cloneDeep(actualWordLetterMap);
     let result = [];
     for (let i = 0; i < LETTER_COUNT; i++) {
       result.push(COLOR.NOT_FOUND);
       if (typedWord[i] === actualWord[i]) {
         result[i] = COLOR.FOUND_CORRECT_SPOT;
-        actualWordLetterMap[typedWord[i]]--;
+        actualWordMapClone[typedWord[i]]--;
       }
     }
     for (let i = 0; i < typedWord?.length; i++) {
       let char = typedWord.charAt(i);
-      if (actualWord.includes(char) && actualWordLetterMap[char] > 0) {
+      if (actualWord.includes(char) && actualWordMapClone[char] > 0) {
         result[i] = COLOR.FOUND_WRONG_SPOT;
-        actualWordLetterMap[char]--;
+        actualWordMapClone[char]--;
       }
     }
     return result;
   };
 
+  const setUsedWordsInLS = () => {
+    const val = JSON.parse(localStorage.getItem(KEYS.UsedWords));
+    if (!val?.length) {
+      localStorage.setItem(KEYS.UsedWords, JSON.stringify([actualWord]));
+    } else {
+      val.push(actualWord);
+      localStorage.setItem(KEYS.UsedWords, JSON.stringify(val));
+    }
+  };
+
+  const clearLS = () => {
+    localStorage.removeItem(KEYS.ActiveWord);
+    localStorage.removeItem(KEYS.GameState);
+  };
+
   const checkWord = (word) => {
+    const cloneState = cloneDeep(state);
+    const targetWord = cloneState.find((item) => item.id === activeWord.id);
     if (word === actualWord) {
       console.log("Winner");
-      // show pop up
-      // localstorage
-      // reset
+      targetWord.word.forEach((element, index) => {
+        element.letter = activeWord.word[index].letter;
+        element.color = COLOR.FOUND_CORRECT_SPOT;
+      });
+
+      setUsedWordsInLS();
+      clearLS();
+      showPopupHandler(TEMPLATE.WINNER);
+      setState(cloneState);
     } else {
-      const cloneState = cloneDeep(state);
-      const targetWord = cloneState.find((item) => item.id === activeWord.id);
       const letterColors = getLetterMatchColor(word);
       targetWord.word.forEach((element, index) => {
         element.letter = activeWord.word[index].letter;
@@ -158,11 +200,13 @@ function Box({ letterPressed, actualWord, savedState }) {
       targetWord.state = WordState.DONE;
       if (targetWord.id === WORD_COUNT - 1) {
         console.log("You lost !");
-        // show pop up
-        // localstorage
-        // Reset
+
+        setUsedWordsInLS();
+        clearLS();
+        showPopupHandler(TEMPLATE.LOSER);
       } else {
         cloneState[targetWord.id + 1].state = WordState.ACTIVE;
+        localStorage.setItem(KEYS.GameState, JSON.stringify(cloneState));
         setState(cloneState);
       }
     }
@@ -186,7 +230,10 @@ function Box({ letterPressed, actualWord, savedState }) {
     return state.map((word) => {
       if (word.state === WordState.ACTIVE) {
         return (
-          <div key={activeWord.id + "hash"} className="word">
+          <div
+            key={activeWord.id + "hash"}
+            className={`word active-word ${glowClass} ${shakeClass}`}
+          >
             {renderLetters(activeWord.word)}
           </div>
         );

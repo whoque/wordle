@@ -7,12 +7,98 @@
         display: flex;
         margin: 2px 0;
         .letter {
-            width: 50px;
-            height: 50px;
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            width: 60px;
+            height: 55px;
             text-transform: uppercase;
             font-weight: bold;
             margin: 0 2px;
-            background-color: grey;
+            color: white;
+            border: 2px solid #3e3e3e;
+            &:first-child {
+                margin-left: 0;
+            }
+            &:last-child {
+                margin-right: 0;
+            }
         }
     }
 }
+.word.active-word .letter {
+    background: black;
+    border-color: #545454;
+}
+
+// SHAKE
+
+.shake {
+    animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  @keyframes shake {
+    10%, 90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    
+    20%, 80% {
+      transform: translate3d(2px, 0, 0);
+    }
+  
+    30%, 50%, 70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+  
+    40%, 60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
+
+  .glow {
+    padding: 0 24px;
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.01);
+    z-index: 9;
+  
+    &::after {
+      position: absolute;
+      content: "";
+      left: 0;
+      right: 0;
+      z-index: -1;
+      height: 100%;
+      width: 100%;
+      transform: scale(0.85) translateZ(0);
+      filter: blur(12px);
+      background: linear-gradient(
+        to left,
+        #ff5770,
+        #e4428d,
+        #c42da8,
+        #9e16c3,
+        #6501de,
+        #9e16c3,
+        #c42da8,
+        #e4428d,
+        #ff5770
+      );
+      background-size: 200% 200%;
+      animation: animateGlow 1.25s linear infinite;
+    }
+  }
+  
+  @keyframes animateGlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
